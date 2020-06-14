@@ -40,8 +40,6 @@ class CatalogEntry
             throw new \Exception(static::class . ': Invalid file');
         }
 
-        $contents = file_get_contents($path);
-
         $this->parsePath($path);
 
         if (false !== ($contents = file_get_contents($path))) {
