@@ -6,7 +6,7 @@ namespace Victor;
 
 use Victor\Catalog\CatalogEntry;
 
-class DigitalCatalog
+class DigitalCatalog implements \Iterator
 {
     /**
      * The catalog data structure
@@ -21,6 +21,13 @@ class DigitalCatalog
      * @var array
      */
     protected $map = [];
+
+    /**
+     * Store the iteratoring position
+     *
+     * @var int
+     */
+    private $position = 0;
 
     /**
      * Construct the digital catalog
@@ -82,6 +89,60 @@ class DigitalCatalog
     public function isEmpty(): bool
     {
         return empty($this->catalog);
+    }
+
+    /*****************************************************
+     * Implementing iterator methods for \Iterable interface
+     *****************************************************/
+
+    /**
+     * Get the current value in the list
+     *
+     * @return \Victor\Catalog\CatalogEntry
+     */
+    public function current(): CatalogEntry
+    {
+        return $this->catalog[$this->position];
+    }
+
+    /**
+     * Get the index of the current position
+     *
+     * @return int
+     */
+    public function key()
+    {
+        return $this->position;
+    }
+
+    /**
+     * Go to the next index position
+     *
+     * @return void
+     */
+    public function next(): void
+    {
+        ++$this->position;
+    }
+
+    /**
+     * Rewind all the way to the first element
+     *
+     * @return void
+     */
+    public function rewind(): void
+    {
+        $this->position = 0;
+    }
+
+    /**
+     * Ensure that the current position has valid data
+     *
+     * @return bool
+     */
+    public function valid(): bool
+    {
+        return isset($this->catalog[$this->position]);
     }
 }
 

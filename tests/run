@@ -154,3 +154,17 @@ test(function () {
     assert($catalog->isEmpty() === false);
     assert(count($entries) === 0);
 }, 'I expect to search catalog by a non-existent field and return no results');
+
+test(function () {
+    $titles = [
+        '23456789012' => 'Why Python Won\'t Replace PHP',
+        '1234567890' => 'PHP The Easy Way',
+        '012345789' => 'Fake Entry 1',
+    ];
+
+    $catalog = new DigitalCatalog(__DIR__ . '/test-catalog');
+
+    foreach ($catalog as $entry) {
+        assert($titles[strval($entry->id)] === $entry->title);
+    }
+}, 'I expect to iterate through the catalog and test the entry titles');

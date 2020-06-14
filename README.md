@@ -29,6 +29,13 @@ print_r($entries);
  *     [0] => 123456789
  * )
  */
+
+/**
+ * As an iterator
+ */
+foreach ($catalog as $entry) {
+    echo $entry->id . PHP_EOL; // 123456789
+}
 ```
 
 ## Tests
