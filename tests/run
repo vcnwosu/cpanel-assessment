@@ -1,0 +1,156 @@
+#!/usr/bin/env php
+<?php
+
+ini_set('assert.exception', '1');
+
+require __DIR__ . '/autoload.php';
+require __DIR__ . '/test.php';
+
+use Victor\Catalog\CatalogEntry;
+use Victor\DigitalCatalog;
+
+echo '
+==============================================
+TESTING: \Victor\Catalog\CatalogEntry
+==============================================
+';
+
+test(function () {
+    $caughtException = false;
+
+    try {
+        $entry = new CatalogEntry('non-existent-file-path');
+    } catch (\Exception $e) {
+        $caughtException = true;
+        assert($e->getMessage() === CatalogEntry::class . ': Invalid file');
+    }
+
+    assert($caughtException === true);
+}, 'I expect to pass a non-existent file path and catch an exception');
+
+test(function () {
+    $data = '
+        =PHP in a Nutshell
+        author=Paul Hudson
+        publisher=O\'Reilly Media
+        isbn=0123456789
+    ';
+
+    $caughtException = false;
+
+    try {
+        $entry = new CatalogEntry();
+        $entry->buildData($data);
+    } catch (\Exception $e) {
+        $caughtException = true;
+        assert($e->getMessage() === CatalogEntry::class . ': Invalid data');
+    }
+
+    assert($caughtException === true);
+}, 'I expect to manually load malformed data and catch an exception');
+
+test(function () {
+    $data = '
+        title=PHP in a Nutshell
+        author=Paul Hudson
+        publisher=O\'Reilly Media
+        isbn=0123456789
+    ';
+
+    $entry = new CatalogEntry();
+    $entry->buildData($data);
+
+    assert($entry->id === null);
+    assert($entry->category === null);
+    assert($entry->title === 'PHP in a Nutshell');
+    assert($entry->author === 'Paul Hudson');
+    assert($entry->publisher === 'O\'Reilly Media');
+    assert($entry->isbn === '0123456789');
+}, 'I expect to successfully load the CatalogEntry object data manually');
+
+test(function () {
+    $entry = new CatalogEntry();
+    $entry->parsePath('/path/to/catalog/entry/0123456789');
+
+    assert($entry->id === '0123456789');
+    assert($entry->category === 'entry');
+}, 'I expect to successfully load the id and category for the CatalogEntry');
+
+test(function () {
+    file_put_contents('valid-entry', '
+        title=How To Write Valid Entries
+        author=Victor Nwosu
+        publisher=Victor Publishing & Co
+        isbn=N/A
+    ');
+
+    $entry = new CatalogEntry(__DIR__ . '/valid-entry');
+
+    unlink('valid-entry');
+
+    $directory = explode('/', __DIR__);
+    $directory = array_pop($directory);
+
+    assert($entry->id === 'valid-entry');
+    assert($entry->category === $directory);
+    assert($entry->title === 'How To Write Valid Entries');
+    assert($entry->author === 'Victor Nwosu');
+    assert($entry->publisher === 'Victor Publishing & Co');
+    assert($entry->isbn === 'N/A');
+}, 'I expect to successfully load CatalogEntry with a valid entry file');
+
+echo '
+==============================================
+TESTING: \Victor\DigitalCatalog
+==============================================
+';
+
+test(function () {
+    $caughtException = false;
+
+    try {
+        $catalog = new DigitalCatalog('non-existent-catalog');
+    } catch (\Exception $e) {
+        $caughtException = true;
+        assert($e->getMessage() === DigitalCatalog::class . ': Catalog does not exist');
+    }
+
+    assert($caughtException === true);
+}, 'I expect to try and load a non-existent catalog and catch an exception');
+
+test(function () {
+    mkdir(__DIR__ . '/empty-catalog');
+    $catalog = new DigitalCatalog(__DIR__ . '/empty-catalog');
+
+    rmdir(__DIR__ . '/empty-catalog');
+    assert($catalog->isEmpty() === true);
+}, 'I expect to load an empty catalog and receive no warnings or exceptions');
+
+test(function () {
+    $catalog = new DigitalCatalog(__DIR__ . '/test-catalog');
+    assert($catalog->isEmpty() === false);
+}, 'I expect to load a catalog with valid and see that catalog is not empty');
+
+test(function () {
+    $catalog = new DigitalCatalog(__DIR__ . '/test-catalog');
+    $entries = $catalog->getEntriesBy('publisher', 'O\'Reilly Media');
+
+    assert($catalog->isEmpty() === false);
+    assert(count($entries) === 2);
+}, 'I expect to search catalog by publisher and return two records');
+
+test(function () {
+    $catalog = new DigitalCatalog(__DIR__ . '/test-catalog');
+    $entries = $catalog->getEntriesBy('author', 'Victor Nwosu');
+
+    assert($catalog->isEmpty() === false);
+    assert(count($entries) === 1);
+}, 'I expect to search catalog by author and return one record');
+
+test(function () {
+    $catalog = new DigitalCatalog(__DIR__ . '/test-catalog');
+    $entries = $catalog->getEntriesBy('doesNotExist', 'Likewise value does not exist');
+
+    assert($catalog->isEmpty() === false);
+    assert(count($entries) === 0);
+}, 'I expect to search catalog by a non-existent field and return no results');
